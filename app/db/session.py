@@ -11,11 +11,20 @@ config = {
 
 DATABASE_URL = config.get("DATABASE_URL","sqlite:///./finance.db")
 
-engine = create_engine(
-    url=DATABASE_URL,
-    echo=False,
-    future=True,
-) ##connection to DB
+if DATABASE_URL.startswith("sqlite"):
+
+    engine = create_engine(
+        DATABASE_URL,
+        echo=False,
+        future=True,
+        connect_args={"check_same_thread":  False}
+        ) ##connection to DB
+else:
+    engine = create_engine(
+        DATABASE_URL,
+        echo=False,
+        future=True,
+        ) ##connection to DB
 
 SessionLocal = sessionmaker(
     bind=engine,

@@ -3,6 +3,7 @@ import os
 from fastapi import FastAPI
 from random import choice
 from pydantic import BaseModel
+from app.init_db import init_db
 
 from app.schemas.health import HealthResponse
 from app.schemas.info import InfoResponse
@@ -14,6 +15,9 @@ config = {
     **dotenv_values(".env")
 }
 app = FastAPI(title="Finance Tracker API", version="0.1.0")
+
+##initialize DB
+init_db()
 
 is_dev = config.get("DEVELOPMENT", "False") == "True"
 
