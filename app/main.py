@@ -1,9 +1,14 @@
-from dotenv import load_dotenv, dotenv_values
+from dotenv import dotenv_values
 import os
 from fastapi import FastAPI
 from random import choice
 from pydantic import BaseModel
 from app.init_db import init_db
+from sqlalchemy.orm import Session
+from fastapi import Depends
+from app.api.deps import get_db
+from app.models.user import User
+from app.schemas.user import UserCreate, UserRead
 
 from app.schemas.health import HealthResponse
 from app.schemas.info import InfoResponse
@@ -44,6 +49,18 @@ def get_info():
                         messageOfTheDay=choice(message))
         
 
-@app.get("/multiply")
-def multiply(a:int, b:int):
-    return {"answer": a * b}
+@app.post("/users", response_model=UserRead)
+def create_user(user_in: UserCreate, db:Session = Depends(get_db)):
+    fake_hashed_password = "fakehashed_" + user_in.password
+
+    db_user = User(
+        email=user_in.email,
+        hashed_password = fake_hashed_password,
+        is_active=user_in.is_active,
+        )
+    
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+
+    return db_user
