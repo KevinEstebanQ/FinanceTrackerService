@@ -10,6 +10,8 @@ from app.api.deps import get_db
 from app.models.user import User
 from app.schemas.user import UserCreate, UserRead
 
+
+
 from app.schemas.health import HealthResponse
 from app.schemas.info import InfoResponse
 
@@ -51,11 +53,13 @@ def get_info():
 
 @app.post("/users", response_model=UserRead)
 def create_user(user_in: UserCreate, db:Session = Depends(get_db)):
-    fake_hashed_password = "fakehashed_" + user_in.password
+    from app.core.security import hash_password
+    hashed_password = hash_password(user_in.password)
+
 
     db_user = User(
         email=user_in.email,
-        hashed_password = fake_hashed_password,
+        hashed_password = hashed_password,
         is_active=user_in.is_active,
         )
     
@@ -64,3 +68,9 @@ def create_user(user_in: UserCreate, db:Session = Depends(get_db)):
     db.refresh(db_user)
 
     return db_user
+
+@app.post("/debug/verify")
+def debug_verify(password: str, hashed:str):
+    from app.core.security import verify_password
+    return {"valid":verify_password(password,  hashed)}
+
