@@ -73,4 +73,3 @@ def create_user(user_in: UserCreate, db:Session = Depends(get_db)):
 def debug_verify(password: str, hashed:str):
     from app.core.security import verify_password
     return {"valid":verify_password(password,  hashed)}
-
