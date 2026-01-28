@@ -5,7 +5,11 @@ from random import choice
 from pydantic import BaseModel
 from app.init_db import init_db
 from sqlalchemy.orm import Session
-from fastapi import Depends
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
+from app.crud.user import authenticate_user
+from app.core.security import create_access_token
+from app.schemas.auth import Token
 from app.api.deps import get_db
 from app.models.user import User
 from app.schemas.user import UserCreate, UserRead
@@ -14,11 +18,10 @@ from app.schemas.user import UserCreate, UserRead
 
 from app.schemas.health import HealthResponse
 from app.schemas.info import InfoResponse
-
+from app.schemas.debug import DBVerify, DBVerify_in
 
 
 config = {
-    **dotenv_values(".env.shared"),
     **dotenv_values(".env")
 }
 app = FastAPI(title="Finance Tracker API", version="0.1.0")
@@ -69,7 +72,21 @@ def create_user(user_in: UserCreate, db:Session = Depends(get_db)):
 
     return db_user
 
-@app.post("/debug/verify")
-def debug_verify(password: str, hashed:str):
+@app.post("/debug/verify",response_model=DBVerify)
+def debug_verify(debug_in: DBVerify_in):
+    
     from app.core.security import verify_password
-    return {"valid":verify_password(password,  hashed)}
+    return DBVerify(validFlag=verify_password(debug_in.password,  debug_in.hashed_pasword))
+
+@app.post("/auth/login", response_model=Token)
+def login(form_data:OAuth2PasswordRequestForm = Depends(), db:Session = Depends(get_db)):
+    """OAuth2 endpoint"""
+    user = authenticate_user(db, email=form_data.username, password=form_data.password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect Email or Password",
+            headers={"WWW-Authenticate":"Bearer"},
+        )
+    acces_token = create_access_token(subject=user.email)
+    return Token(access_token=acces_token, token_type="bearer")

@@ -2,3 +2,6 @@
 __pychache__/
 *.pyc
 .env
+finance.db
+email:kevinsita@gmail.com
+logs.txt
