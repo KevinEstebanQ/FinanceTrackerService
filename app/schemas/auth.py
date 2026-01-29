@@ -7,5 +7,5 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     sub:str | None = None ##user identifier
-    expire: int | None = None
+    exp: int | None = None
     
