@@ -6,16 +6,17 @@ from random import choice
 from pydantic import BaseModel
 from app.init_db import init_db
 from sqlalchemy.orm import Session
+from sqlalchemy import delete,select, update
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from app.crud.user import authenticate_user
-from app.core.security import create_access_token
+from app.core.security import create_access_token, generate_refresh_token, hash_refresh_token, verify_refresh_token
 from app.schemas.auth import Token
 from app.api.deps import get_db, get_current_user
 from app.models.user import User
+from app.models.auth_session import AuthSession
 from app.schemas.user import UserCreate, UserRead
-
-
+from fastapi import Request
 from app.schemas.health import HealthResponse
 from app.schemas.info import InfoResponse
 from app.schemas.debug import DBVerify, DBVerify_in
@@ -61,7 +62,7 @@ def create_user(user_in: UserCreate, db:Session = Depends(get_db)):
 
 
     db_user = User(
-        email=user_in.email,
+        email = user_in.email,
         hashed_password = hashed_password,
         is_active=user_in.is_active,
         )
@@ -79,7 +80,7 @@ def debug_verify(debug_in: DBVerify_in):
     return DBVerify(validFlag=verify_password(debug_in.password,  debug_in.hashed_pasword))
 
 @app.post("/auth/login", response_model=Token)
-def login(form_data:OAuth2PasswordRequestForm = Depends(), db:Session = Depends(get_db)):
+def login(request:Request,form_data:OAuth2PasswordRequestForm = Depends(), db:Session = Depends(get_db)):
 
     """OAuth2 endpoint"""
     user = authenticate_user(db, email=form_data.username, password=form_data.password)
@@ -89,8 +90,34 @@ def login(form_data:OAuth2PasswordRequestForm = Depends(), db:Session = Depends(
             detail="Incorrect Email or Password",
             headers={"WWW-Authenticate":"Bearer"},
         )
+    
+    #token handling + refresh token
     access_token = create_access_token(subject=user.email)
-    return Token(access_token=access_token, token_type="bearer")
+    refresh_token = generate_refresh_token()
+    hashed_refresh_token = hash_refresh_token(refresh_token)
+
+    from datetime import datetime, timezone, timedelta
+    now = datetime.now(timezone.utc)
+
+    #make sure we update revoked at correctly
+    stmt = update(AuthSession).where((AuthSession.user_id == user.id) & 
+                                     (AuthSession.revoked_at.is_(None)) & 
+                                     (AuthSession.expires_at > now)).values(revoked_at = now)
+    db.execute(statement=stmt)
+
+    
+    auth_session = AuthSession(
+         user_id = user.id,
+         token_hash = hashed_refresh_token,
+         expires_at = now+timedelta(days=int(config.get('REFRESH_TOKEN_EXPIRE_DAYS'))),
+         last_used_at = now,
+         revoked_at = None,
+         ip = request.client.host if request.client else None
+    )
+    db.add(auth_session)
+    db.commit()
+    
+    return Token(access_token=access_token, token_type="bearer", refresh_token=refresh_token)
 
 @app.get("/me", response_model=UserRead)
 def get_me(current_user: User = Depends(get_current_user))->User:

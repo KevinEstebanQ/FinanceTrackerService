@@ -1,9 +1,11 @@
 from passlib.context import CryptContext
+import hashlib
 
 from datetime import datetime, timedelta, timezone
 from jose import jwt, JWTError
 from dotenv import dotenv_values
 from app.schemas.auth import TokenData
+import secrets
 
 #create endpoint that uses the crypt context and save the password in the table
 #each time a login takes place verify the password with the hash
@@ -13,6 +15,7 @@ CONFIG = {
     }
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated = "auto")
+
 
 def hash_password(password: str)->str:
     return pwd_context.hash(password)
@@ -43,6 +46,7 @@ def create_access_token(subject:str, expires_delta: timedelta  | None = None)->s
 
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
 def decode_access_token(encoded_token:str)->TokenData | None:
     if not encoded_token:
         return None
@@ -60,3 +64,14 @@ def decode_access_token(encoded_token:str)->TokenData | None:
         return None
     
     return TokenData(sub=sub, exp=exp)
+
+def generate_refresh_token() -> str:
+   return secrets.token_urlsafe(32)
+
+def hash_refresh_token(token:str) -> str:
+    pepper = (CONFIG.get("SECRET_KEY") or "").encode("utf-8")
+    token_bytes = token.encode("utf-8") 
+    return hashlib.sha256(token_bytes + pepper).hexdigest()
+
+def verify_refresh_token(token:str, hashed_token:str)->bool:
+    return secrets.compare_digest(hash_refresh_token(token), hashed_token)

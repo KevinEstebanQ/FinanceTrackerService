@@ -1,5 +1,6 @@
 from app.db.base import Base
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy.orm import Mapped,relationship
 from datetime import datetime,UTC
 
 
@@ -14,3 +15,6 @@ class AuthSession(Base):
     last_used_at = Column(DateTime, nullable=True)
     revoked_at = Column(DateTime, nullable=True)
     ip  = Column(String(45), nullable=True)
+
+    user = relationship("User", back_populates="auth_sessions")
+    

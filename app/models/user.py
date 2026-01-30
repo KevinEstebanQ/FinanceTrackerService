@@ -1,6 +1,7 @@
 from datetime import datetime, UTC
 from sqlalchemy import Boolean, Column, DateTime, Integer, String
 from app.db.base import Base
+from sqlalchemy.orm import relationship
 
 class User(Base):
     __tablename__ =  "users"
@@ -11,3 +12,4 @@ class User(Base):
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC), nullable= False)
 
+    auth_sessions = relationship("AuthSession", back_populates="user", cascade="all, delete-orphan")
