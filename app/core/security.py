@@ -42,9 +42,7 @@ def create_access_token(subject:str, expires_delta: timedelta  | None = None)->s
 
 
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
     return encoded_jwt
-
 def decode_access_token(encoded_token:str)->TokenData | None:
     if not encoded_token:
         return None
