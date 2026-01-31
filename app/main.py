@@ -11,7 +11,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from app.crud.user import authenticate_user
 from app.core.security import create_access_token, generate_refresh_token, hash_refresh_token, verify_refresh_token
-from app.schemas.auth import Token
+from app.schemas.auth import Token,AuthRefreshRead, AuthRefreshResponse
 from app.api.deps import get_db, get_current_user
 from app.models.user import User
 from app.models.auth_session import AuthSession
@@ -126,3 +126,14 @@ def get_me(current_user: User = Depends(get_current_user))->User:
 @app.get("/protected/ping")
 def enforce_auth(current_user: User = Depends(get_current_user)):
      return {"ok":True}
+
+@app.post("/auth/refresh", response_model=AuthRefreshResponse)
+def refresh_auth_session(refresh_token: AuthRefreshRead):
+    if refresh_token:
+        hashed_token = hash_refresh_token(token=refresh_token)
+    else:
+        raise HTTPException(status_code=401,
+                            detail="Invalid Refresh Token",
+                            headers={"WWWW-Authenticate":"Bearer"}
+                            )
+    
