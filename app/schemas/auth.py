@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
+from fastapi import Request
 
 class Token(BaseModel):
     access_token:str
@@ -13,7 +14,6 @@ class TokenData(BaseModel):
 class AuthRefreshRead(BaseModel):
     refresh_token:str
 
-class AuthRefreshResponse(BaseModel):
-    hashed_refresh_token: str
-    new_jwt: str
+
+
     

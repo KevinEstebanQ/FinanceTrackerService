@@ -3,14 +3,14 @@ from app.models.user import User
 from app.models.auth_session import AuthSession
 from app.core.security import verify_password,hash_refresh_token, verify_refresh_token, create_access_token
 from sqlalchemy import select, delete, update,Column
-from dotenv import load_dotenv
+from dotenv import load_dotenv,dotenv_values
 from fastapi.requests import Request
 from app.schemas.auth import Token
 from fastapi.exceptions import HTTPException
 """DB OPERATION LAYER"""
 
 config = {
-    **load_dotenv(".env")
+    **dotenv_values(".env")
 }
 def get_user_by_email(db: Session, email: str)-> User | None:
     return db.query(User).filter(User.email == email).first()
@@ -18,7 +18,7 @@ def get_user_by_email(db: Session, email: str)-> User | None:
 #returns full auth Session for said refresh hash
 def query_auth_session(db:Session, hashed_refresh_token: str)->AuthSession:
     from datetime import datetime, timezone
-    now = datetime.now(timezone.utc)
+    now = datetime.utcnow()
     stmt = select(AuthSession) \
                 .where((AuthSession.token_hash == hashed_refresh_token) &
                        (AuthSession.revoked_at.is_(None)) &
@@ -28,7 +28,7 @@ def query_auth_session(db:Session, hashed_refresh_token: str)->AuthSession:
         raise HTTPException(
             status_code=401,
             detail="No Such Sessions",
-            headers={"WWW-Authenticate": "Bearer"}
+            headers={"WWW-Authenticate": "bearer"}
         )
     return auth_session
 
@@ -39,7 +39,7 @@ def query_user_from_user_id(db:Session, user_id:int)-> User | None:
 
 def update_auth_session(user:User, db:Session, request:Request)->Token:
     from datetime import datetime, timezone, timedelta
-    now = datetime.now(timezone.utc)
+    now = datetime.utcnow()
 
     stmt = update(AuthSession).where((AuthSession.user_id == user.id) & 
                                      (AuthSession.revoked_at.is_(None)) & 
@@ -86,14 +86,7 @@ def verify_session_refresh(db:Session, refresh_token: str, request:Request)->Tok
         raise HTTPException(
             status_code=403,
             detail="User is Authenticated but Forbidden",
-            headers={"WWWW-Authenticate": "Bearer"}
+            headers={"WWWW-Authenticate": "bearer"}
         )
     return update_auth_session(db=db, user=user, request=request)
     
-
-
-
-
-
-
-
