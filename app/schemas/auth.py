@@ -14,6 +14,9 @@ class TokenData(BaseModel):
 class AuthRefreshRead(BaseModel):
     refresh_token:str
 
+class LogoutRequest(BaseModel):
+    refresh_token:str
+
 
 
     
