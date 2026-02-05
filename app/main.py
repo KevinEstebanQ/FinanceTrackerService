@@ -16,6 +16,7 @@ from app.schemas.auth import Token, AuthRefreshRead, LogoutRequest
 from app.schemas.transaction import TransactionRead,TransactionCreate
 from app.api.deps import get_db, get_current_user, dev_access
 from app.models.user import User
+from app.models.transactions import Transaction
 from app.models.auth_session import AuthSession
 from app.schemas.user import UserCreate, UserRead
 from fastapi import Request
@@ -162,9 +163,9 @@ def debug_cleanup(current_user: User = Depends(get_current_user), db: Session = 
                              )
 
 @app.post("/transactions", response_model=TransactionRead)
-def new_trasaction(body: TransactionCreate, 
+def new_transaction(body: TransactionCreate, 
                    db:Session = Depends(get_db), 
-                   current_user:User = Depends(get_current_user))->dict:
+                   current_user:User = Depends(get_current_user)):
     txn = create_new_transaction(db, desc=body.desc, amount=body.amount, txn_type=body.txn_type, 
                             transaction_date=body.transaction_date, 
                             user_id=current_user.id)
