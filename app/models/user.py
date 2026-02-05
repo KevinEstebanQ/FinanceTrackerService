@@ -10,6 +10,7 @@ class User(Base):
     email = Column(String(255), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(UTC), nullable= False)
+    created_at = Column(DateTime, default=lambda: datetime.utcnow(), nullable= False)
 
     auth_sessions = relationship("AuthSession", back_populates="user", cascade="all, delete-orphan")
+    transactions = relationship("Transaction", back_populates="user", cascade="all, delete-orphan")
