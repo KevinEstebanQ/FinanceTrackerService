@@ -7,6 +7,7 @@ class Transaction(Base):
     __tablename__ = "transactions"
 
     id = Column(Integer, index=True, primary_key=True)
+    
     user_id = Column(Integer, ForeignKey("users.id"), unique=False, nullable=False)
     amount = Column(Numeric(12,2), nullable=False)
     created_at = Column(DateTime, default= lambda: datetime.utcnow())

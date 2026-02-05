@@ -10,8 +10,10 @@ from sqlalchemy import delete,select, update
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from app.crud.user import authenticate_user, verify_session_refresh,revoke_refresh_session,cleanup_session
+from app.crud.transactions import create_new_transaction
 from app.core.security import create_access_token, generate_refresh_token, hash_refresh_token, verify_refresh_token
 from app.schemas.auth import Token, AuthRefreshRead, LogoutRequest
+from app.schemas.transaction import TransactionRead,TransactionCreate
 from app.api.deps import get_db, get_current_user, dev_access
 from app.models.user import User
 from app.models.auth_session import AuthSession
@@ -159,4 +161,17 @@ def debug_cleanup(current_user: User = Depends(get_current_user), db: Session = 
                              headers={"WWW-Authenticate":"bearer"}
                              )
 
+@app.post("/transactions", response_model=TransactionRead)
+def new_trasaction(body: TransactionCreate, 
+                   db:Session = Depends(get_db), 
+                   current_user:User = Depends(get_current_user))->dict:
+    txn = create_new_transaction(db, desc=body.desc, amount=body.amount, txn_type=body.txn_type, 
+                            transaction_date=body.transaction_date, 
+                            user_id=current_user.id)
+    if txn is None:
+         raise HTTPException(status_code=400, 
+                             detail="Incorrect Transaction Data")
+    else:
+        return txn
      
+

@@ -26,11 +26,7 @@ def query_auth_session(db:Session, hashed_refresh_token: str)->AuthSession:
                        (AuthSession.expires_at > now))
     auth_session = db.execute(stmt).scalar()
     if not auth_session:
-        raise HTTPException(
-            status_code=401,
-            detail="No Such Sessions",
-            headers={"WWW-Authenticate": "bearer"}
-        )
+        return None
     return auth_session
 
 def query_user_from_user_id(db:Session, user_id:int)-> User | None:
@@ -78,17 +74,9 @@ def verify_session_refresh(db:Session, refresh_token: str, request:Request)->Tok
     auth_session = query_auth_session(db=db, hashed_refresh_token=hashed)
     user = query_user_from_user_id(db=db, user_id=auth_session.user_id)
     if not user:
-        raise HTTPException(
-            status_code=401,
-            detail="User does not Exist",
-            headers={"WWWW-Authenticate": "bearer"}
-        )
+        return None
     elif not user.is_active:
-        raise HTTPException(
-            status_code=403,
-            detail="User is Authenticated but Forbidden",
-            headers={"WWWW-Authenticate": "bearer"}
-        )
+        return None
     return update_auth_session(db=db, user=user, request=request)
 
 def revoke_refresh_session(db: Session, refresh_token: str, user_id: int)->bool:
