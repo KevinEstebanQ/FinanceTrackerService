@@ -1,7 +1,7 @@
 from dotenv import dotenv_values
 import os
 from fastapi import FastAPI, Header
-from typing import Annotated, List
+from typing import List
 from random import choice
 from pydantic import BaseModel
 from app.init_db import init_db
@@ -104,7 +104,7 @@ def say_hello(username: str):
          description="Get service information and a motivational message")
 def get_info():
     message =  ["This is your day, enjoy it", 
-                "today might not be a good day, but I belive in you", 
+                "today might not be a good day, but I believe in you", 
                 "Make the most from what you have been given"]
     return InfoResponse(desc= "this is the API for the finance tracker app",
                         author="Kevin Esteban Quiceno",
@@ -119,11 +119,16 @@ def create_user(user_in: UserCreate, db:Session = Depends(get_db)):
     hashed_password = hash_password(user_in.password)
 
 
+    # Check if user already exists
+    existing_user = db.query(User).filter(User.email == user_in.email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
     db_user = User(
         email = user_in.email,
         hashed_password = hashed_password,
         is_active=user_in.is_active,
-        role=user_in.role if user_in.role else "user",
+        role="user",  # Always set to "user" for security - admins must be created by other admins
         )
     
     db.add(db_user)

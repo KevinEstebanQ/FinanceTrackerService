@@ -1,6 +1,3 @@
-import pytest
-
-
 def test_get_users(client, auth_headers, test_user):
     """Test getting list of users."""
     response = client.get("/users", headers=auth_headers)

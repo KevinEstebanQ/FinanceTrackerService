@@ -50,11 +50,12 @@ def client(db_session):
 
 @pytest.fixture
 def test_user(db_session):
-    """Create a test user."""
+    """Create a test user with admin role for testing admin endpoints."""
     user = User(
         email="test@example.com",
         hashed_password=hash_password("testpassword123"),
         is_active=True,
+        role="admin",  # Set as admin to test admin-only endpoints
     )
     db_session.add(user)
     db_session.commit()
