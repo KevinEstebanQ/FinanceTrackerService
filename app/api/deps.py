@@ -43,6 +43,16 @@ def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_
                             )
     return current_user 
 
+def get_admin_user(current_user: User = Depends(get_current_user)) -> User:
+    """Dependency to verify user has admin role."""
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Admin access required",
+            headers={'WWW-Authenticate': 'Bearer'}
+        )
+    return current_user
+
 def dev_access()->bool:
     dev = True if dotenv_values(".env").get("DEVELOPMENT") == "True" else False
     return dev
