@@ -8,6 +8,7 @@ from fastapi.requests import Request
 from app.schemas.auth import Token
 from fastapi.exceptions import HTTPException
 from datetime import datetime, timedelta
+from typing import List, Optional
 """DB OPERATION LAYER"""
 
 config = {
@@ -15,6 +16,12 @@ config = {
 }
 def get_user_by_email(db: Session, email: str)-> User | None:
     return db.query(User).filter(User.email == email).first()
+
+def get_user_by_id(db: Session, user_id: int) -> Optional[User]:
+    return db.query(User).filter(User.id == user_id).first()
+
+def get_users(db: Session, skip: int = 0, limit: int = 100) -> List[User]:
+    return db.query(User).offset(skip).limit(limit).all()
 
 #returns full auth Session for said refresh hash
 def query_auth_session(db:Session, hashed_refresh_token: str)->AuthSession:
