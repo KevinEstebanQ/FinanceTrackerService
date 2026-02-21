@@ -1,6 +1,9 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import Select, update,Delete
 from app.models.transactions import Transaction
+from app.schemas.transaction import TransactionSingle,TransactionGet
 from datetime import datetime
+from typing import List
 import math
 
 def create_new_transaction(db:Session,desc:str, amount:float, txn_type: str, transaction_date:datetime, user_id:int)->Transaction | None:
@@ -24,4 +27,9 @@ def create_new_transaction(db:Session,desc:str, amount:float, txn_type: str, tra
     db.commit()
     db.refresh(new_transaction)
     return new_transaction
-    
+
+
+def get_user_transactions(db:Session, user_id: int, limit: int = 10)->TransactionGet:
+    stmt = Select(Transaction).where(Transaction.user_id == user_id).limit(limit)
+    transaction = db.execute(stmt).scalars().all()
+    return [TransactionSingle(amount=txn.amount, txn_type=txn.txn_type, desc=txn.desc, transaction_date=txn.transaction_date) for txn in transaction]

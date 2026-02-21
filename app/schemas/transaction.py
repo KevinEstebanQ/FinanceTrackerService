@@ -10,3 +10,12 @@ class TransactionCreate(BaseModel):
 class TransactionRead(TransactionCreate):
     id:int
     created_at:datetime
+
+class TransactionSingle(BaseModel):
+    amount: float
+    txn_type: str
+    desc: str
+    transaction_date: datetime
+
+class TransactionGet(BaseModel):
+    transactions: list[TransactionSingle]
