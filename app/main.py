@@ -1,6 +1,7 @@
 from dotenv import dotenv_values
 import os
 from fastapi import FastAPI, Header
+from fastapi.responses import RedirectResponse
 from typing import Annotated
 from random import choice
 from pydantic import BaseModel
@@ -36,7 +37,7 @@ init_db()
 is_dev = config.get("DEVELOPMENT", "False") == "True"
 
 
-@app.get("/health", response_model=HealthResponse)
+@app.get("/health", response_model=HealthResponse)  # Service health and runtime environment status.
 def health_Check():
     enviroment = "Dev" if is_dev else "Production"
     return HealthResponse(status="ok",
@@ -44,11 +45,11 @@ def health_Check():
             version= app.version,
             enviroment = enviroment)
 
-@app.get("/hello/{username}")
+@app.get("/hello/{username}")  # Simple greeting endpoint for connectivity checks.
 def say_hello(username: str):
     return {"message": f"Hello, {username}"}
 
-@app.get("/info", response_model=InfoResponse)
+@app.get("/info", response_model=InfoResponse)  # API metadata and motivational message of the day.
 def get_info():
     message =  ["This is your day, enjoy it", 
                 "today might not be a good day, but I belive in you", 
@@ -58,7 +59,7 @@ def get_info():
                         messageOfTheDay=choice(message))
         
 
-@app.post("/users", response_model=UserRead)
+@app.post("/users", response_model=UserRead)  # Register a new user account with hashed credentials.
 def create_user(user_in: UserCreate, db:Session = Depends(get_db)):
     from app.core.security import hash_password
     hashed_password = hash_password(user_in.password)
@@ -76,13 +77,13 @@ def create_user(user_in: UserCreate, db:Session = Depends(get_db)):
 
     return db_user
 
-@app.post("/debug/verify",response_model=DBVerify)
+@app.post("/debug/verify",response_model=DBVerify)  # Debug endpoint to validate password-hash matching.
 def debug_verify(debug_in: DBVerify_in):
     
     from app.core.security import verify_password
     return DBVerify(validFlag=verify_password(debug_in.password,  debug_in.hashed_pasword))
 
-@app.post("/auth/login", response_model=Token)
+@app.post("/auth/login", response_model=Token)  # Authenticate user and issue access and refresh tokens.
 def login(request:Request,form_data:OAuth2PasswordRequestForm = Depends(), db:Session = Depends(get_db)):
 
     """OAuth2 endpoint"""
@@ -122,20 +123,20 @@ def login(request:Request,form_data:OAuth2PasswordRequestForm = Depends(), db:Se
     
     return Token(access_token=access_token, token_type="bearer", refresh_token=refresh_token)
 
-@app.get("/me", response_model=UserRead)
+@app.get("/me", response_model=UserRead)  # Return the currently authenticated user's profile.
 def get_me(current_user: User = Depends(get_current_user))->User:
         return current_user
 
-@app.get("/protected/ping")
+@app.get("/protected/ping")  # Protected heartbeat endpoint to verify auth enforcement.
 def enforce_auth(current_user: User = Depends(get_current_user)):
      return {"ok":True}
 
-@app.post("/auth/refresh", response_model=Token)
+@app.post("/auth/refresh", response_model=Token)  # Exchange a valid refresh token for a new token set.
 def refresh_auth_session(request: Request, body: AuthRefreshRead, db:Session = Depends(get_db))->Token:
      token = verify_session_refresh(db=db, refresh_token=body.refresh_token, request=request)
      return token
      
-@app.post("/auth/logout")
+@app.post("/auth/logout")  # Revoke an active refresh session for the authenticated user.
 def logout_request(body:LogoutRequest, current_user: User = Depends(get_current_user), 
                    db:Session = Depends(get_db))->dict:
     result = revoke_refresh_session(db=db, 
@@ -149,7 +150,7 @@ def logout_request(body:LogoutRequest, current_user: User = Depends(get_current_
                               )
     return {"ok":result}
 
-@app.post("/debug/cleanup-sessions")
+@app.post("/debug/cleanup-sessions")  # Development-only cleanup of expired or stale auth sessions.
 def debug_cleanup(current_user: User = Depends(get_current_user), db: Session = Depends(get_db), 
                   dev: bool = Depends(dev_access), grace_days:int = 2)->dict:
     if dev:
@@ -162,7 +163,7 @@ def debug_cleanup(current_user: User = Depends(get_current_user), db: Session = 
                              headers={"WWW-Authenticate":"bearer"}
                              )
 
-@app.post("/transactions", response_model=TransactionRead)
+@app.post("/transactions", response_model=TransactionRead)  # Create a new transaction for the current user.
 def new_transaction(body: TransactionCreate, 
                    db:Session = Depends(get_db), 
                    current_user:User = Depends(get_current_user)):
@@ -176,9 +177,12 @@ def new_transaction(body: TransactionCreate,
         return txn
     
 
-@app.get("/transactions/user", response_model=TransactionGet)
+@app.get("/transactions/user", response_model=TransactionGet)  # List all transactions for the current user.
 def get_user_transaction(current_user: User = Depends(get_current_user), db: Session = Depends(get_db))-> TransactionGet:
     transactions = TransactionGet(transactions=get_user_transactions(db=db, user_id=current_user.id))
     return transactions
      
 
+@app.get("/")  # Redirect root requests to interactive API documentation.
+def home():
+     return RedirectResponse(url="/docs")
