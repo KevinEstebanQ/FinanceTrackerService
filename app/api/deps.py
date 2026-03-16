@@ -5,9 +5,9 @@ from fastapi.security import OAuth2PasswordBearer
 from app.db.session import SessionLocal
 from app.crud.user import get_user_by_email
 from app.core.security import decode_access_token
+from app.core.config import load_config
 from app.models.user  import User
 from fastapi.exceptions import HTTPException
-from dotenv import dotenv_values
 """FAST API DEPENDECIES"""
 
 
@@ -44,5 +44,5 @@ def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_
     return current_user 
 
 def dev_access()->bool:
-    dev = True if dotenv_values(".env").get("DEVELOPMENT") == "True" else False
+    dev = True if load_config().get("DEVELOPMENT") == "True" else False
     return dev

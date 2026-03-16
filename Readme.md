@@ -1,86 +1,72 @@
 # FinanceTrackerService
 
-A finance tracker backend service built with **FastAPI** and a **SQL database**.
+A finance tracker backend service built with FastAPI and SQLAlchemy.
 
-## What this repo is
-FinanceTrackerService is a backend API intended to power a personal finance tracker (users + financial data), with a FastAPI service layer and a relational database behind it. The repository currently includes:
-- `app/` — application source code
-- `.env.shared` — shared environment defaults / examples
-- `finance.db` — a local SQLite database file (useful for quick local testing)
-- `requirements.txt` — Python dependencies
+## Tech stack
+- FastAPI
+- SQLAlchemy
+- SQLite (default)
+- PostgreSQL-ready configuration
 
----
-
-##  Tech Stack (expected)
-- **FastAPI** (REST API)
-- **Pydantic** (request/response validation)
-- **SQLAlchemy** (ORM)
-- **SQLite** by default (via `finance.db` / `DATABASE_URL`)
-- Auth: password hashing + JWT-style authentication (if enabled in `app/`)
-
----
-
-## Quickstart
-
-### 1) Create a virtual environment
+## Local run (without Docker)
+1. Create and activate a virtual environment.
 ```bash
 python -m venv .venv
-# Windows:
-.venv\Scripts\activate
-# macOS/Linux:
 source .venv/bin/activate
 ```
-
-### 2) Install dependencies
+2. Install dependencies.
 ```bash
 pip install -r requirements.txt
 ```
-
-### 3) Configure environment variables
-Create a `.env` file in the project root. Use `.env.shared` as a reference.
-
-### 4) Run the API (dev)
-From the repo root:
+3. Create `.env` from `.env.shared` and adjust values.
+4. Run the API.
 ```bash
 uvicorn app.main:app --reload
 ```
+5. Open docs at `http://127.0.0.1:8000/docs`.
 
-Then open:
-- Swagger UI: `http://127.0.0.1:8000/docs`
+## Docker Compose (SQLite persistent)
 
----
+`docker-compose.yml` runs the API and stores SQLite data in a named Docker volume (`sqlite_data`). This means API image rebuilds do not delete DB data.
 
-## Database notes
-
-### SQLite (default)
-- The repo includes `finance.db` for local development.
-- If you want a clean start, you can delete `finance.db` and let your app recreate tables (depending on how `app/` is configured).
-
----
-
-## API Overview
-Once running, the API endpoints are documented automatically in `/docs`.
-TBD
-
-### Common commands
+Run:
 ```bash
-# Run server
-uvicorn app.main:app --reload
-
-# Freeze deps (optional)
-pip freeze > requirements.txt
+docker compose up --build
 ```
 
----
+API URL:
+- `http://localhost:8080`
+- `http://localhost:8080/docs`
 
-## Roadmap (suggested)
-- [ ] Add missing endpoint
-- [ ] Add Docker + docker-compose (API + DB)
-- [ ] Add test suite (pytest) + CI (GitHub Actions)
-- [ ] Add role-based access / refresh tokens (if needed)
-- [ ] Add OpenAPI tags + examples for nicer docs
+Stop:
+```bash
+docker compose down
+```
 
----
+Stop and delete SQLite volume (full reset):
+```bash
+docker compose down -v
+```
+
+## PostgreSQL migration path
+
+This repo now includes `docker-compose.postgres.yml` as an override. It adds a `db` (PostgreSQL) service and points the API to Postgres.
+
+Run API + Postgres:
+```bash
+docker compose -f docker-compose.yml -f docker-compose.postgres.yml up --build
+```
+
+Notes:
+- SQLAlchemy URL for Postgres is `postgresql+psycopg://...`
+- `requirements.txt` includes `psycopg[binary]` for the DB driver.
+- Existing SQLite data does not auto-migrate. If you need data migration, add Alembic and run a one-time transfer script.
+
+## Recommended next migration steps
+1. Add Alembic for schema versioning.
+2. Create an initial migration from current models.
+3. Add dev/prod env files with distinct `DATABASE_URL` values.
+4. Add a seed/migration script if you need to copy SQLite data into Postgres.
 
 ## Author
 KevinEstebanQ

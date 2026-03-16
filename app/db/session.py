@@ -1,13 +1,10 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from dotenv import dotenv_values
 
 from app.db.base import Base
+from app.core.config import load_config
 
-config = {
-    **dotenv_values(".env.shared"),
-    **dotenv_values(".env")
-}
+config = load_config()
 
 DATABASE_URL = config.get("DATABASE_URL","sqlite:///./finance.db")
 

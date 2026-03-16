@@ -1,4 +1,3 @@
-from dotenv import dotenv_values
 import os
 from fastapi import FastAPI, Header
 from fastapi.responses import RedirectResponse
@@ -24,11 +23,10 @@ from fastapi import Request
 from app.schemas.health import HealthResponse
 from app.schemas.info import InfoResponse
 from app.schemas.debug import DBVerify, DBVerify_in
+from app.core.config import load_config
 
 
-config = {
-    **dotenv_values(".env")
-}
+config = load_config()
 app = FastAPI(title="Finance Tracker API", version="0.1.0")
 
 ##initialize DB
@@ -185,4 +183,4 @@ def get_user_transaction(current_user: User = Depends(get_current_user), db: Ses
 
 @app.get("/")  # Redirect root requests to interactive API documentation.
 def home():
-     return RedirectResponse(url="/docs")
+     return RedirectResponse(url="/docs")          

@@ -4,16 +4,13 @@ import hashlib
 
 from datetime import datetime, timedelta, timezone
 from jose import jwt, JWTError
-from dotenv import dotenv_values
 from app.schemas.auth import TokenData
 import secrets
+from app.core.config import load_config
 
 #create endpoint that uses the crypt context and save the password in the table
 #each time a login takes place verify the password with the hash
-CONFIG = {
-    **dotenv_values(".env.shared"),
-    **dotenv_values(".env")
-    }
+CONFIG = load_config()
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated = "auto")
 

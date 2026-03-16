@@ -1,0 +1,17 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: finance-tracker-service:local
+    container_name: finance-tracker-api
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    volumes:
+      - sqlite_data:/app/data
+    restart: unless-stopped
+
+volumes:
+  sqlite_data:

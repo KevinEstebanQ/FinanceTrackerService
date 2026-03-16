@@ -3,16 +3,14 @@ from app.models.user import User
 from app.models.auth_session import AuthSession
 from app.core.security import verify_password,hash_refresh_token, decode_access_token, create_access_token
 from sqlalchemy import select, delete, update,Column
-from dotenv import load_dotenv,dotenv_values
 from fastapi.requests import Request
 from app.schemas.auth import Token
 from fastapi.exceptions import HTTPException
 from datetime import datetime, timedelta
+from app.core.config import load_config
 """DB OPERATION LAYER"""
 
-config = {
-    **dotenv_values(".env")
-}
+config = load_config()
 def get_user_by_email(db: Session, email: str)-> User | None:
     return db.query(User).filter(User.email == email).first()
 
