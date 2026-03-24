@@ -1,13 +1,13 @@
 from sqlalchemy.orm import Session
-from app.models.user import User
-from app.models.auth_session import AuthSession
-from app.core.security import verify_password,hash_refresh_token, decode_access_token, create_access_token
+from models.user import User
+from models.auth_session import AuthSession
+from core.security import verify_password,hash_refresh_token, decode_access_token, create_access_token
 from sqlalchemy import select, delete, update,Column
 from fastapi.requests import Request
-from app.schemas.auth import Token
+from schemas.auth import Token
 from fastapi.exceptions import HTTPException
 from datetime import datetime, timedelta
-from app.core.config import load_config
+from core.config import load_config
 """DB OPERATION LAYER"""
 
 config = load_config()
@@ -41,7 +41,7 @@ def update_auth_session(user:User, db:Session, request:Request)->Token:
                                      (AuthSession.expires_at > now)).values(revoked_at = now)
     db.execute(stmt)
 
-    from app.core.security import generate_refresh_token, hash_refresh_token
+    from core.security import generate_refresh_token, hash_refresh_token
     refresh_token = generate_refresh_token()
     hashed_refresh_token = hash_refresh_token(refresh_token)
     auth_session = AuthSession(
@@ -88,14 +88,3 @@ def revoke_refresh_session(db: Session, refresh_token: str, user_id: int)->bool:
     result = db.execute(statement=stmt)
     db.commit()
     return True if result.rowcount > 0 else False
-
-def cleanup_session(db:Session, now:datetime, grace_days: int = 2)-> int:
-    grace = timedelta(days=grace_days)
-    threshold = now - grace
-    stmt = delete(AuthSession).where((AuthSession.expires_at <= (threshold)) | 
-                                     (AuthSession.revoked_at <= (threshold))
-                                     )
-    result = db.execute(stmt)
-    db.commit()
-    return result.rowcount or 0
-    

@@ -1,7 +1,22 @@
 services:
-  api:
+  auth-service:
     build:
-      context: .
+      context: ./auth-service
+      dockerfile: Dockerfile
+    image: auth-service:local
+    container_name: auth-service
+    env_file:
+      - .env
+    ports:
+      - "8081:8081"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  transactions-service:
+    build:
+      context: ./Transactions
       dockerfile: Dockerfile
     image: finance-tracker-service:local
     container_name: finance-tracker-api
@@ -9,9 +24,28 @@ services:
       - .env
     ports:
       - "8080:8080"
-    volumes:
-      - sqlite_data:/app/data
+    depends_on:
+      db:
+        condition: service_healthy
     restart: unless-stopped
 
+  db:
+    image: postgres:16
+    container_name: finance-tracker-db
+    environment:
+      POSTGRES_DB: finance_tracker
+      POSTGRES_USER: finance_user
+      POSTGRES_PASSWORD: finance_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U finance_user -d finance_tracker"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
 volumes:
-  sqlite_data:
+  pg_data:

@@ -4,9 +4,9 @@ import hashlib
 
 from datetime import datetime, timedelta, timezone
 from jose import jwt, JWTError
-from app.schemas.auth import TokenData
+from schemas.auth import TokenData
 import secrets
-from app.core.config import load_config
+from .config import load_config
 
 #create endpoint that uses the crypt context and save the password in the table
 #each time a login takes place verify the password with the hash

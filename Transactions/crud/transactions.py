@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import Select, update,Delete
-from app.models.transactions import Transaction
-from app.schemas.transaction import TransactionSingle,TransactionGet
+from models.transactions import Transaction
+from schemas.transaction import TransactionSingle,TransactionGet
 from datetime import datetime
 from typing import List
 import math

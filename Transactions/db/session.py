@@ -1,8 +1,8 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.db.base import Base
-from app.core.config import load_config
+from .base import Base
+from core.config import load_config
 
 config = load_config()
 

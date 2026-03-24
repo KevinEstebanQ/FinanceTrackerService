@@ -13,8 +13,8 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install -r requirements.txt
 
 # Copy only application code (build context is reduced by .dockerignore).
-COPY app ./app
+COPY . .
 
-EXPOSE 8080
+EXPOSE 8081
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8081"]

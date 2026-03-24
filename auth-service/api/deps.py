@@ -2,11 +2,11 @@ from collections.abc import Generator
 from sqlalchemy.orm import Session
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
-from app.db.session import SessionLocal
-from app.crud.user import get_user_by_email
-from app.core.security import decode_access_token
-from app.core.config import load_config
-from app.models.user  import User
+from db.session import SessionLocal
+from crud.user import get_user_by_email
+from core.security import decode_access_token
+from core.config import load_config
+from models.user  import User
 from fastapi.exceptions import HTTPException
 """FAST API DEPENDECIES"""
 
