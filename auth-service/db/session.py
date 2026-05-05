@@ -6,7 +6,7 @@ from core.config import load_config
 
 config = load_config()
 
-DATABASE_URL = config.get("AUTH_DATABASE_URL","sqlite:///./auth.db")
+DATABASE_URL = config.get("DATABASE_URL","sqlite:///./auth.db")
 
 if DATABASE_URL.startswith("sqlite"):
 
