@@ -13,6 +13,7 @@ from schemas.debug import DBVerify, DBVerify_in
 from schemas.user import UserCreate, UserRead
 from api.deps import get_db, get_current_user, dev_access
 from schemas.auth import Token, AuthRefreshRead, LogoutRequest
+from schemas.health import HealthResponse
 
 
 config = load_config()
@@ -31,6 +32,11 @@ app.add_middleware(
 init_db()
 
 is_dev = config.get("DEVELOPMENT", "False") == "True"
+
+@app.get("/health", response_model=HealthResponse)
+def health_endpoint():
+     enviroment = "Dev" if is_dev else "Prod"
+     return HealthResponse(status="ok", service="Auth", version=app.version, enviroment=enviroment)
 
 @app.post("/users", response_model=UserRead)  # Register a new user account with hashed credentials.
 def create_user(user_in: UserCreate, db:Session = Depends(get_db)):
@@ -109,6 +115,8 @@ def enforce_auth(current_user: User = Depends(get_current_user)):
 @app.post("/auth/refresh", response_model=Token)  # Exchange a valid refresh token for a new token set.
 def refresh_auth_session(request: Request, body: AuthRefreshRead, db:Session = Depends(get_db))->Token:
      token = verify_session_refresh(db=db, refresh_token=body.refresh_token, request=request)
+     if not token:
+         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
      return token
      
 @app.post("/auth/logout")  # Revoke an active refresh session for the authenticated user.

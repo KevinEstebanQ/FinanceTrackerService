@@ -70,6 +70,8 @@ def authenticate_user(db:Session, email:str, password: str)->User | None:
 def verify_session_refresh(db:Session, refresh_token: str, request:Request)->Token:
     hashed = hash_refresh_token(refresh_token)
     auth_session = query_auth_session(db=db, hashed_refresh_token=hashed)
+    if not auth_session:
+        return None
     user = query_user_from_user_id(db=db, user_id=auth_session.user_id)
     if not user:
         return None
