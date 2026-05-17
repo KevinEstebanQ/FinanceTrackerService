@@ -1,0 +1,6 @@
+api
+core
+crud
+db
+models
+schemas

@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import update
-from init_db import init_db
+#from init_db import init_db
 from core.config import load_config
 from core.security import create_access_token, generate_refresh_token, hash_refresh_token
 from crud.user import authenticate_user, revoke_refresh_session, verify_session_refresh
@@ -29,7 +29,7 @@ app.add_middleware(
 )
 
 ##initialize DB
-init_db()
+#init_db()
 
 is_dev = config.get("DEVELOPMENT", "False") == "True"
 
@@ -115,8 +115,6 @@ def enforce_auth(current_user: User = Depends(get_current_user)):
 @app.post("/auth/refresh", response_model=Token)  # Exchange a valid refresh token for a new token set.
 def refresh_auth_session(request: Request, body: AuthRefreshRead, db:Session = Depends(get_db))->Token:
      token = verify_session_refresh(db=db, refresh_token=body.refresh_token, request=request)
-     if not token:
-         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
      return token
      
 @app.post("/auth/logout")  # Revoke an active refresh session for the authenticated user.
