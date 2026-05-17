@@ -4,23 +4,24 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
-
+from db.base import Base
+from models.transactions import Transaction
 from core.config import load_config
 
-from db.base import Base
-from models.auth_session import AuthSession
-from models.user import User
+env_config = load_config()
 
-env_vars = load_config()
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
-config.set_main_option("sqlalchemy.url", env_vars.get("DATABASE_URL"))
+
+# set sqlalchemy url to env var db_url
+config.set_main_option("sqlalchemy.url",env_config.get("DATABASE_URL"))
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
+
 # add your model's MetaData object here
 # for 'autogenerate' support
 # from myapp import mymodel
@@ -32,6 +33,12 @@ target_metadata = Base.metadata
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
+TRANSACTIONS_TABLES = {"transactions"}
+
+def include_object(object, name, type_, reflected, compare_to):
+    if type_ == "table" and name not in TRANSACTIONS_TABLES:
+        return False
+    return True
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
@@ -45,13 +52,14 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = env_vars.get("DATABASE_URL", None)
+    url = env_config.get("DATABASE_URL", None)
     context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
-        version_table="alembic_version_auth"
+        version_table="alembic_version_transactions",
+        include_object=include_object
     )
 
     with context.begin_transaction():
@@ -73,8 +81,10 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata,
-            version_table="alembic_version_auth"
+            connection=connection, 
+            target_metadata=target_metadata,
+            version_table="alembic_version_transactions",
+            include_object=include_object
         )
 
         with context.begin_transaction():

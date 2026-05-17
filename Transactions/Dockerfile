@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -7,14 +7,16 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 # Copy dependency manifest first so dependency install can be cached.
-COPY requirements.txt ./
+COPY pyproject.toml uv.lock ./
 
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install -r requirements.txt
+    pip install .
 
 # Copy only application code (build context is reduced by .dockerignore).
 COPY . .
 
+RUN chmod +x Entrypoint.sh
+
 EXPOSE 8080
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["./Entrypoint.sh"]
