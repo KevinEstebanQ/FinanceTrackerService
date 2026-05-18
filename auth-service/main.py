@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import update
-from init_db import init_db
+#from init_db import init_db
 from core.config import load_config
 from core.security import create_access_token, generate_refresh_token, hash_refresh_token
 from crud.user import authenticate_user, revoke_refresh_session, verify_session_refresh
@@ -13,6 +13,7 @@ from schemas.debug import DBVerify, DBVerify_in
 from schemas.user import UserCreate, UserRead
 from api.deps import get_db, get_current_user, dev_access
 from schemas.auth import Token, AuthRefreshRead, LogoutRequest
+from schemas.health import HealthResponse
 
 
 config = load_config()
@@ -28,9 +29,14 @@ app.add_middleware(
 )
 
 ##initialize DB
-init_db()
+#init_db()
 
 is_dev = config.get("DEVELOPMENT", "False") == "True"
+
+@app.get("/health", response_model=HealthResponse)
+def health_endpoint():
+     enviroment = "Dev" if is_dev else "Prod"
+     return HealthResponse(status="ok", service="Auth", version=app.version, enviroment=enviroment)
 
 @app.post("/users", response_model=UserRead)  # Register a new user account with hashed credentials.
 def create_user(user_in: UserCreate, db:Session = Depends(get_db)):

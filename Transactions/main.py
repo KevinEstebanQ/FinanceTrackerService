@@ -17,7 +17,7 @@ config = load_config()
 app = FastAPI(title="Finance Tracker API", version="0.1.0")
 
 ##initialize DB
-init_db()
+#init_db()
 
 is_dev = config.get("DEVELOPMENT", "False") == "True"
 

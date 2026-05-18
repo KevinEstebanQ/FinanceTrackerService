@@ -1,0 +1,7 @@
+README.md
+pyproject.toml
+Transactions.egg-info/PKG-INFO
+Transactions.egg-info/SOURCES.txt
+Transactions.egg-info/dependency_links.txt
+Transactions.egg-info/requires.txt
+Transactions.egg-info/top_level.txt
