@@ -27,10 +27,12 @@ if config.config_file_name is not None:
 # target_metadata = mymodel.Base.metadata
 target_metadata = Base.metadata
 
-# other values from the config, defined by the needs of env.py,
-# can be acquired:
-# my_important_option = config.get_main_option("my_important_option")
-# ... etc.
+AUTH_TABLES = {"users", "auth_sessions"}
+
+def include_object(object, name, type_, reflected, compare_to):
+    if type_ == "table" and name not in AUTH_TABLES:
+        return False
+    return True
 
 
 def run_migrations_offline() -> None:
@@ -51,7 +53,8 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
-        version_table="alembic_version_auth"
+        version_table="alembic_version_auth",
+        include_object=include_object,
     )
 
     with context.begin_transaction():
@@ -73,8 +76,10 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata,
-            version_table="alembic_version_auth"
+            connection=connection,
+            target_metadata=target_metadata,
+            version_table="alembic_version_auth",
+            include_object=include_object,
         )
 
         with context.begin_transaction():
