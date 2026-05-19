@@ -9,8 +9,8 @@ WORKDIR /app
 # Copy dependency manifest first so dependency install can be cached.
 COPY pyproject.toml uv.lock ./
 
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install .
+RUN --mount=type=cache,id=pip-cache,target=/root/.cache/pip \
+      pip install .
 
 # Copy only application code (build context is reduced by .dockerignore).
 COPY . .
