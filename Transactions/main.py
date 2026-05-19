@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
 from fastapi.responses import RedirectResponse
 from random import choice
 from init_db import init_db
@@ -14,11 +14,11 @@ from core.config import load_config
 
 
 config = load_config()
-app = FastAPI(title="Finance Tracker API", version="0.1.0")
+app = FastAPI(title="transaction-service", version="0.1.0")
 
 ##initialize DB
 #init_db()
-
+LOGIN_URL = config.get("AUTH_SERVICE_URL","http://auth-service:8081")
 is_dev = config.get("DEVELOPMENT", "False") == "True"
 
 
@@ -66,4 +66,8 @@ def get_user_transaction(current_user = Depends(get_current_user), db: Session =
 
 @app.get("/")  # Redirect root requests to interactive API documentation.
 def home():
-     return RedirectResponse(url="/docs")          
+     return RedirectResponse(url="/docs")
+
+@app.exception_handler(status.HTTP_401_UNAUTHORIZED)
+def login_redirect(request: Request, exc: HTTPException):
+    return RedirectResponse(url=LOGIN_URL+"/login", status_code=status.HTTP_303_SEE_OTHER)
