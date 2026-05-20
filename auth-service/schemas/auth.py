@@ -10,6 +10,7 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     sub:str | None = None ##user identifier
     exp: int | None = None
+    user_id: int | None = None
 
 class AuthRefreshRead(BaseModel):
     refresh_token:str

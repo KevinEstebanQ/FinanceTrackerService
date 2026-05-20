@@ -2,8 +2,7 @@ import os
 from fastapi import FastAPI, Request, status
 from fastapi.responses import RedirectResponse
 from random import choice
-from init_db import init_db
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends, HTTPException, status
 from crud.transactions import create_new_transaction, get_user_transactions
 from schemas.transaction import TransactionRead,TransactionCreate, TransactionGet
@@ -45,22 +44,22 @@ def get_info():
         
 
 @app.post("/transactions", response_model=TransactionRead)  # Create a new transaction for the current user.
-def new_transaction(body: TransactionCreate, 
-                   db:Session = Depends(get_db), 
-                   current_user = Depends(get_current_user)):
-    txn = create_new_transaction(db, desc=body.desc, amount=body.amount, txn_type=body.txn_type, 
-                            transaction_date=body.transaction_date, 
-                            user_id=current_user.id)
+async def new_transaction(body: TransactionCreate, 
+                         db: AsyncSession = Depends(get_db), 
+                         current_user = Depends(get_current_user)):
+    txn = await create_new_transaction(db, desc=body.desc, amount=body.amount, txn_type=body.txn_type, 
+                                      transaction_date=body.transaction_date, 
+                                      user_id=current_user.user_id)
     if txn is None:
-         raise HTTPException(status_code=400, 
+         raise HTTPException(status_code=400,
                              detail="Incorrect Transaction Data")
     else:
         return txn
-    
+
 
 @app.get("/transactions/user", response_model=TransactionGet)  # List all transactions for the current user.
-def get_user_transaction(current_user = Depends(get_current_user), db: Session = Depends(get_db))-> TransactionGet:
-    transactions = TransactionGet(transactions=get_user_transactions(db=db, user_id=current_user.id))
+async def get_user_transaction(current_user = Depends(get_current_user), db: AsyncSession = Depends(get_db)) -> TransactionGet:
+    transactions = TransactionGet(transactions=await get_user_transactions(db=db, user_id=current_user.user_id))
     return transactions
      
 
@@ -70,4 +69,4 @@ def home():
 
 @app.exception_handler(status.HTTP_401_UNAUTHORIZED)
 def login_redirect(request: Request, exc: HTTPException):
-    return RedirectResponse(url=LOGIN_URL+"/login", status_code=status.HTTP_303_SEE_OTHER)
+    return RedirectResponse(url=LOGIN_URL+"/docs", status_code=status.HTTP_303_SEE_OTHER)

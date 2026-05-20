@@ -1,0 +1,9 @@
+Method,Name,Error,Occurrences,First Seen,Last Seen
+POST,/users,HTTPError('500 Server Error: Internal Server Error for url: /users'),5,2026-05-20T12:50:21Z,2026-05-20T12:50:31Z
+GET,/me,HTTPError('401 Client Error: Unauthorized for url: /me'),115,2026-05-20T12:50:39Z,2026-05-20T12:51:42Z
+GET,/me,RemoteDisconnected('Remote end closed connection without response'),10,2026-05-20T12:50:32Z,2026-05-20T12:51:18Z
+GET,/me,HTTPError('500 Server Error: Internal Server Error for url: /me'),74,2026-05-20T12:50:27Z,2026-05-20T12:51:42Z
+POST,/auth/refresh,HTTPError('500 Server Error: Internal Server Error for url: /auth/refresh'),51,2026-05-20T12:50:06Z,2026-05-20T12:51:42Z
+POST,/auth/login,RemoteDisconnected('Remote end closed connection without response'),1,2026-05-20T12:50:47Z,2026-05-20T12:50:47Z
+POST,/auth/login,HTTPError('500 Server Error: Internal Server Error for url: /auth/login'),47,2026-05-20T12:50:21Z,2026-05-20T12:51:42Z
+POST,/auth/login,HTTPError('401 Client Error: Unauthorized for url: /auth/login'),27,2026-05-20T12:50:31Z,2026-05-20T12:51:41Z
