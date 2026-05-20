@@ -15,10 +15,28 @@ from schemas.user import UserCreate, UserRead
 from api.deps import get_db, get_current_user, dev_access
 from schemas.auth import Token, AuthRefreshRead, LogoutRequest
 from schemas.health import HealthResponse
+from contextlib import asynccontextmanager
+from cache.redis import get_redis
+import redis.asyncio as aioredis
 
 
 config = load_config()
-app = FastAPI(title="Finance Tracker Auth-API", version="0.1.0")
+
+
+#lifespan for FastApi app with redis
+@asynccontextmanager
+async def lifeSpan(app: FastAPI):
+     app.state.pool = aioredis.ConnectionPool.from_url(
+          config.get("REDIS_URL"),
+          max_connections=50,
+          decode_responses=True)
+     yield
+     await app.state.pool.aclose()
+     
+
+app = FastAPI(title="Finance Tracker Auth-API", 
+              version="0.1.0",
+              lifespan=lifeSpan)
 
 # Add CORS middleware
 app.add_middleware(
