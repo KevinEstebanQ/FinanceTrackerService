@@ -31,22 +31,36 @@ services:
 
   db:
     image: postgres:16
-    container_name: finance-tracker-db
+    container_name: ${POSTGRES_CONTAINER_NAME}
     environment:
-      POSTGRES_DB: finance_tracker
-      POSTGRES_USER: finance_user
-      POSTGRES_PASSWORD: finance_pass
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
     volumes:
       - pg_data:/var/lib/postgresql/data
       - ./my-postgres.conf:/etc/postgresql/postgresql.conf
     command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U finance_user -d finance_tracker"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 20
 
+
+  grafana:
+      image: grafana/grafana:latest
+      container_name: ${GRAFANA_CONTAINER_NAME}
+      env_file:
+        - .env
+      volumes: 
+        - ./datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml
+      ports:
+        - ${GRAFANA_PORT}:${GRAFANA_PORT}
+      depends_on:
+        db:
+          condition: service_healthy
+      restart: unless-stopped
 volumes:
   pg_data:
