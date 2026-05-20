@@ -12,3 +12,7 @@ Finanacia_Tracker_Service.egg-info/
 plan.md
 CLAUDE.md
 notes
+
+# Benchmark raw output — summaries live in benchmarks/RESULTS.md
+benchmarks/results/*
+!benchmarks/results/.gitkeep

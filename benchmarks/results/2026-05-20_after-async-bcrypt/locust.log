@@ -1,7 +1,0 @@
-[2026-05-20 09:35:43,929] kevinq/INFO/locust.main: Starting Locust 2.44.0
-[2026-05-20 09:35:43,930] kevinq/INFO/locust.main: Run time limit set to 120 seconds
-[2026-05-20 09:35:43,930] kevinq/INFO/locust.runners: Ramping to 300 users at a rate of 10.00 per second
-[2026-05-20 09:36:13,060] kevinq/INFO/locust.runners: All users spawned: {"TransactionsUser": 300} (300 total users)
-[2026-05-20 09:37:43,808] kevinq/INFO/locust.main: --run-time limit reached, shutting down
-[2026-05-20 09:37:44,012] kevinq/INFO/locust.main: writing html report to file: benchmarks/results/2026-05-20_after-async-bcrypt/report.html
-[2026-05-20 09:37:44,014] kevinq/INFO/locust.main: Shutting down (exit code 0)

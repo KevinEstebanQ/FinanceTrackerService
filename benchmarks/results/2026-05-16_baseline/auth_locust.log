@@ -1,6 +1,0 @@
-[2026-05-16 14:48:28,578] kevinq/INFO/locust.main: Starting Locust 2.44.0
-[2026-05-16 14:48:28,578] kevinq/INFO/locust.main: Run time limit set to 60 seconds
-[2026-05-16 14:48:28,579] kevinq/INFO/locust.runners: Ramping to 50 users at a rate of 10.00 per second
-[2026-05-16 14:48:32,583] kevinq/INFO/locust.runners: All users spawned: {"AuthServiceUser": 50} (50 total users)
-[2026-05-16 14:49:28,458] kevinq/INFO/locust.main: --run-time limit reached, shutting down
-[2026-05-16 14:49:28,491] kevinq/INFO/locust.main: Shutting down (exit code 0)

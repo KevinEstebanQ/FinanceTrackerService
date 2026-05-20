@@ -1,3 +1,0 @@
-Method,Name,Error,Occurrences,First Seen,Last Seen
-POST,/transactions [POST],HTTPError('503 Server Error: Service Unavailable for url: /transactions [POST]'),243,2026-05-19T20:33:59Z,2026-05-19T20:35:47Z
-GET,/transactions/user,HTTPError('503 Server Error: Service Unavailable for url: /transactions/user'),637,2026-05-19T20:33:59Z,2026-05-19T20:35:47Z
