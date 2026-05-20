@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from jose import jwt, JWTError
 from schemas.auth import TokenData
 import secrets
+import asyncio
 from core.config import load_config
 
 #create endpoint that uses the crypt context and save the password in the table
@@ -15,11 +16,11 @@ CONFIG = load_config()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated = "auto")
 
 
-def hash_password(password: str)->str:
-    return pwd_context.hash(password)
+async def hash_password(password: str)-> str:
+    return await asyncio.to_thread(pwd_context.hash, password)
 
-def verify_password(plain_password: str, hashed_password: str)->bool:
-    return pwd_context.verify(plain_password, hashed_password)
+async def verify_password(plain_password: str, hashed_password: str)->bool:
+    return await asyncio.to_thread(pwd_context.verify, plain_password, hashed_password)
 
 SECRET_KEY = get_secret = CONFIG.get("SECRET_KEY", 'None')
 ALGORITHM = get_algorithm = CONFIG.get("ALGORITHM", 'HS256')

@@ -17,7 +17,7 @@ import random
 import string
 from datetime import datetime, timezone
 
-import httpx
+import requests as _requests
 from locust import HttpUser, between, task
 
 AUTH_SERVICE_URL = "http://localhost:8081"
@@ -99,16 +99,21 @@ class TransactionsUser(HttpUser):
         self.token = ""
 
         # Register + login via auth-service (sync, runs once per simulated user)
-        httpx.post(
-            f"{AUTH_SERVICE_URL}/users",
-            json={"email": self.email, "password": self.password},
-        )
-        resp = httpx.post(
-            f"{AUTH_SERVICE_URL}/auth/login",
-            data={"username": self.email, "password": self.password},
-        )
-        if resp.status_code == 200:
-            self.token = resp.json().get("access_token", "")
+        try:
+            _requests.post(
+                f"{AUTH_SERVICE_URL}/users",
+                json={"email": self.email, "password": self.password},
+                timeout=30,
+            )
+            resp = _requests.post(
+                f"{AUTH_SERVICE_URL}/auth/login",
+                data={"username": self.email, "password": self.password},
+                timeout=30,
+            )
+            if resp.status_code == 200:
+                self.token = resp.json().get("access_token", "")
+        except _requests.exceptions.Timeout:
+            pass
 
     def _auth_headers(self) -> dict:
         return {"Authorization": f"Bearer {self.token}"}

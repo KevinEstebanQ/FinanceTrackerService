@@ -18,7 +18,7 @@ async def get_user_by_email(db: AsyncSession, email: str)-> User | None:
 #returns full auth Session for said refresh hash
 async def query_auth_session(db:AsyncSession, hashed_refresh_token: str)->AuthSession:
     from datetime import datetime, timezone
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     stmt = select(AuthSession) \
                 .where((AuthSession.token_hash == hashed_refresh_token) &
                        (AuthSession.revoked_at.is_(None)) &
@@ -38,9 +38,9 @@ async def update_auth_session(user:User, db:AsyncSession, request:Request)->Toke
     from datetime import datetime, timezone, timedelta
     now = datetime.now(timezone.utc)
 
-    stmt = update(AuthSession).where((AuthSession.user_id == user.id) & 
-                                     (AuthSession.revoked_at.is_(None)) & 
-                                     (AuthSession.expires_at > now)).values(revoked_at = now)
+    stmt = update(AuthSession).where((AuthSession.user_id == user.id) &
+                                     (AuthSession.revoked_at.is_(None)) &
+                                     (AuthSession.expires_at > now)).values(revoked_at = now).execution_options(synchronize_session=False)
     await db.execute(stmt)
 
     from core.security import generate_refresh_token, hash_refresh_token
@@ -55,7 +55,7 @@ async def update_auth_session(user:User, db:AsyncSession, request:Request)->Toke
          ip = request.client.host if request.client else None
     )
     db.add(auth_session)
-    db.commit()
+    await db.commit()
 
     new_access = create_access_token(subject=user.email, user_id=user.id)
     return Token(access_token=new_access, token_type="bearer", refresh_token=refresh_token)
@@ -64,7 +64,7 @@ async def authenticate_user(db:AsyncSession, email:str, password: str)->User | N
     user = await get_user_by_email(db, email)
     if not user:
         return None
-    if not verify_password(password, user.hashed_password):
+    if not await verify_password(password, user.hashed_password):
         return None
     
     return user
@@ -85,10 +85,10 @@ async def revoke_refresh_session(db: AsyncSession, refresh_token: str, user_id: 
     hashed = hash_refresh_token(refresh_token)
     now = datetime.now(timezone.utc)
     stmt = update(AuthSession).where(
-                                (AuthSession.user_id == user_id) 
+                                (AuthSession.user_id == user_id)
                                 & (AuthSession.token_hash == hashed)
                                 & (AuthSession.revoked_at.is_(None))
-                                     ).values(revoked_at = now)
+                                     ).values(revoked_at = now).execution_options(synchronize_session=False)
     result = await db.execute(statement=stmt)
     await db.commit()
     return True if result.rowcount > 0 else False

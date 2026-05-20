@@ -8,6 +8,7 @@ from core.config import load_config
 from core.security import create_access_token, generate_refresh_token, hash_refresh_token
 from crud.user import authenticate_user, revoke_refresh_session, verify_session_refresh
 from models.auth_session import AuthSession
+from core.security import hash_password
 from models.user import User
 from schemas.debug import DBVerify, DBVerify_in
 from schemas.user import UserCreate, UserRead
@@ -41,8 +42,7 @@ def health_endpoint():
 @app.post("/users", response_model=UserRead)  # Register a new user account with hashed credentials.
 async def create_user(user_in: UserCreate, db:AsyncSession = Depends(get_db)):
     try:
-        from core.security import hash_password
-        hashed_password = hash_password(user_in.password)
+        hashed_password = await hash_password(user_in.password)
 
         db_user = User(
             email = user_in.email,
@@ -79,9 +79,9 @@ async def login(request:Request,form_data:OAuth2PasswordRequestForm = Depends(),
     now = datetime.now(timezone.utc)
 
     #make sure we update revoked at correctly
-    stmt = update(AuthSession).where((AuthSession.user_id == user.id) & 
-                                     (AuthSession.revoked_at.is_(None)) & 
-                                     (AuthSession.expires_at > now)).values(revoked_at = now)
+    stmt = update(AuthSession).where((AuthSession.user_id == user.id) &
+                                     (AuthSession.revoked_at.is_(None)) &
+                                     (AuthSession.expires_at > now)).values(revoked_at = now).execution_options(synchronize_session=False)
     await db.execute(statement=stmt)
 
     

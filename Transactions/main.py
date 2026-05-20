@@ -69,4 +69,4 @@ def home():
 
 @app.exception_handler(status.HTTP_401_UNAUTHORIZED)
 def login_redirect(request: Request, exc: HTTPException):
-    return RedirectResponse(url=LOGIN_URL+"/login", status_code=status.HTTP_303_SEE_OTHER)
+    return RedirectResponse(url=LOGIN_URL+"/docs", status_code=status.HTTP_303_SEE_OTHER)
