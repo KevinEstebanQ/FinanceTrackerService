@@ -1,7 +1,7 @@
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
 from sqlalchemy import pool
+from sqlalchemy import create_engine
 
 from alembic import context
 from db.base import Base
@@ -14,8 +14,9 @@ env_config = load_config()
 # access to the values within the .ini file in use.
 config = context.config
 
-# set sqlalchemy url to env var db_url
-config.set_main_option("sqlalchemy.url",env_config.get("DATABASE_URL"))
+# Alembic uses a sync engine — strip the _async suffix if present
+_db_url = env_config.get("DATABASE_URL", "").replace("+psycopg_async", "+psycopg")
+config.set_main_option("sqlalchemy.url", _db_url)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -67,21 +68,12 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    """Run migrations in 'online' mode.
-
-    In this scenario we need to create an Engine
-    and associate a connection with the context.
-
-    """
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
+    """Run migrations in 'online' mode."""
+    connectable = create_engine(_db_url, poolclass=pool.NullPool)
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, 
+            connection=connection,
             target_metadata=target_metadata,
             version_table="alembic_version_transactions",
             include_object=include_object

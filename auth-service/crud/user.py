@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from models.user import User
 from models.auth_session import AuthSession
 from core.security import verify_password,hash_refresh_token, decode_access_token, create_access_token
@@ -6,40 +6,42 @@ from sqlalchemy import select, delete, update,Column
 from fastapi.requests import Request
 from schemas.auth import Token
 from fastapi.exceptions import HTTPException
-from datetime import datetime, timedelta
+from datetime import datetime, timezone
 from core.config import load_config
 """DB OPERATION LAYER"""
 
 config = load_config()
-def get_user_by_email(db: Session, email: str)-> User | None:
-    return db.query(User).filter(User.email == email).first()
+async def get_user_by_email(db: AsyncSession, email: str)-> User | None:
+    result = await db.execute(select(User).filter(User.email == email))
+    return result.scalar_one_or_none()
 
 #returns full auth Session for said refresh hash
-def query_auth_session(db:Session, hashed_refresh_token: str)->AuthSession:
+async def query_auth_session(db:AsyncSession, hashed_refresh_token: str)->AuthSession:
     from datetime import datetime, timezone
     now = datetime.utcnow()
     stmt = select(AuthSession) \
                 .where((AuthSession.token_hash == hashed_refresh_token) &
                        (AuthSession.revoked_at.is_(None)) &
                        (AuthSession.expires_at > now))
-    auth_session = db.execute(stmt).scalar()
+    result = await db.execute(stmt)
+    auth_session = result.scalar_one_or_none()
     if not auth_session:
         return None
     return auth_session
 
-def query_user_from_user_id(db:Session, user_id:int)-> User | None:
+async def query_user_from_user_id(db:AsyncSession, user_id:int)-> User | None:
     stmt = select(User).where(User.id == user_id)
-    user = db.execute(stmt).scalar()
-    return user
+    result = await db.execute(stmt)
+    return result.scalar()
 
-def update_auth_session(user:User, db:Session, request:Request)->Token:
+async def update_auth_session(user:User, db:AsyncSession, request:Request)->Token:
     from datetime import datetime, timezone, timedelta
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     stmt = update(AuthSession).where((AuthSession.user_id == user.id) & 
                                      (AuthSession.revoked_at.is_(None)) & 
                                      (AuthSession.expires_at > now)).values(revoked_at = now)
-    db.execute(stmt)
+    await db.execute(stmt)
 
     from core.security import generate_refresh_token, hash_refresh_token
     refresh_token = generate_refresh_token()
@@ -55,11 +57,11 @@ def update_auth_session(user:User, db:Session, request:Request)->Token:
     db.add(auth_session)
     db.commit()
 
-    new_access = create_access_token(subject=user.email)
+    new_access = create_access_token(subject=user.email, user_id=user.id)
     return Token(access_token=new_access, token_type="bearer", refresh_token=refresh_token)
 
-def authenticate_user(db:Session, email:str, password: str)->User | None:
-    user = get_user_by_email(db, email)
+async def authenticate_user(db:AsyncSession, email:str, password: str)->User | None:
+    user = await get_user_by_email(db, email)
     if not user:
         return None
     if not verify_password(password, user.hashed_password):
@@ -67,26 +69,26 @@ def authenticate_user(db:Session, email:str, password: str)->User | None:
     
     return user
 
-def verify_session_refresh(db:Session, refresh_token: str, request:Request)->Token:
+async def verify_session_refresh(db:AsyncSession, refresh_token: str, request:Request)->Token:
     hashed = hash_refresh_token(refresh_token)
-    auth_session = query_auth_session(db=db, hashed_refresh_token=hashed)
+    auth_session = await query_auth_session(db=db, hashed_refresh_token=hashed)
     if not auth_session:
         return None
-    user = query_user_from_user_id(db=db, user_id=auth_session.user_id)
+    user = await query_user_from_user_id(db=db, user_id=auth_session.user_id)
     if not user:
         return None
     elif not user.is_active:
         return None
-    return update_auth_session(db=db, user=user, request=request)
+    return await update_auth_session(db=db, user=user, request=request)
 
-def revoke_refresh_session(db: Session, refresh_token: str, user_id: int)->bool:
+async def revoke_refresh_session(db: AsyncSession, refresh_token: str, user_id: int)->bool:
     hashed = hash_refresh_token(refresh_token)
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     stmt = update(AuthSession).where(
                                 (AuthSession.user_id == user_id) 
                                 & (AuthSession.token_hash == hashed)
                                 & (AuthSession.revoked_at.is_(None))
                                      ).values(revoked_at = now)
-    result = db.execute(statement=stmt)
-    db.commit()
+    result = await db.execute(statement=stmt)
+    await db.commit()
     return True if result.rowcount > 0 else False

@@ -25,7 +25,7 @@ SECRET_KEY = get_secret = CONFIG.get("SECRET_KEY", 'None')
 ALGORITHM = get_algorithm = CONFIG.get("ALGORITHM", 'HS256')
 ACCESS_TOKEN_EXPIRE_MINUTES  = int(CONFIG.get("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
                                    
-def create_access_token(subject:str, expires_delta: timedelta  | None = None)->str:
+def create_access_token(subject:str, user_id: int, expires_delta: timedelta  | None = None)->str:
     """
     create a signed jwt Containing subject and expiration time
     """
@@ -33,10 +33,11 @@ def create_access_token(subject:str, expires_delta: timedelta  | None = None)->s
         expires_delta = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
     now = datetime.now(timezone.utc)
-    expire = now  + expires_delta
+    expire = now + expires_delta
 
     to_encode = {
         "sub": subject, #user email
+        "user_id": user_id,
         "iat": int(now.timestamp()),
         "exp": int(expire.timestamp())
     }
@@ -54,6 +55,7 @@ def decode_access_token(encoded_token:str)->TokenData | None:
         return None
     sub = decoded.get('sub')
     exp = decoded.get('exp')
+    user_id = decoded.get('user_id')
     now_ts = int(datetime.now(timezone.utc).timestamp())
 
     if not isinstance(sub, str) or not sub:
@@ -61,7 +63,7 @@ def decode_access_token(encoded_token:str)->TokenData | None:
     if not isinstance(exp, int) or exp <= now_ts:
         return None
     
-    return TokenData(sub=sub, exp=exp)
+    return TokenData(sub=sub, exp=exp, user_id=user_id)
 
 def generate_refresh_token() -> str:
    return secrets.token_urlsafe(32)
