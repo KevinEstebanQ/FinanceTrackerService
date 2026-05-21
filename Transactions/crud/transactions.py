@@ -5,6 +5,7 @@ from schemas.transaction import TransactionSingle,TransactionGet
 from datetime import datetime
 from typing import List
 import math
+from cache.redis import get_cached_transactions, set_cached_txn, get_redis
 
 async def create_new_transaction(db: AsyncSession, desc: str, amount: float, txn_type: str, transaction_date: datetime, user_id: int) -> Transaction | None:
     if txn_type not in {"income", "outcome"}:

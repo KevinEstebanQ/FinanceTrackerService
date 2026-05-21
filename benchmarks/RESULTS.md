@@ -25,6 +25,7 @@ Each row is one locust run. Raw CSV + HTML reports live in `results/<date>_<labe
 | 2026-05-20 | after-async-bcrypt | 300 | 163.3 | 180 | 3100 | 5100 | 0% | bcrypt in thread pool; 6× concurrency vs baseline; previously 84% fail rate at 300u |
 | 2026-05-20 | after-workers | 300 | 348.7 | 110 | 330 | 470 | 0% | 4 Uvicorn workers (`UVICORN_WORKERS=4`); p95 dropped 89% (3.1s → 330ms); 555 total req/s aggregated |
 | 2026-05-20 | after-redis | 300 | 347.4 | 100 | 320 | 440 | 0% | Redis on auth `get_current_user`; transactions flat (no txn cache yet); auth `/me` p50 dropped 96% (1100ms → 41ms) |
+| 2026-05-21 | after-txn-cache | 300 | 414.1 | 50 | 140 | 200 | 0% | Redis cache on `GET /transactions/user`; +19% RPS, p95 dropped 56% (320ms → 140ms) vs after-redis |
 
 ### POST /transactions
 
@@ -35,6 +36,7 @@ Each row is one locust run. Raw CSV + HTML reports live in `results/<date>_<labe
 | 2026-05-20 | after-async-bcrypt | 300 | 65.5 | 220 | 2900 | 4900 | 0% | 6× concurrency vs baseline |
 | 2026-05-20 | after-workers | 300 | 137.7 | 150 | 390 | 510 | 0% | 4 workers; p95 dropped 87% (2.9s → 390ms) |
 | 2026-05-20 | after-redis | 300 | 140.2 | 140 | 370 | 490 | 0% | Marginal improvement — no transaction-level caching yet |
+| 2026-05-21 | after-txn-cache | 300 | 162.6 | 75 | 260 | 390 | 0% | +16% RPS, p95 dropped 30% (370ms → 260ms) vs after-redis |
 
 ### POST /auth/login
 
@@ -56,6 +58,7 @@ Each row is one locust run. Raw CSV + HTML reports live in `results/<date>_<labe
 |------|-------|-------|-----|----------|----------|----------|--------|-------|
 | 2026-05-20 | after-workers | 300 | 70.0 | 1100 | 3200 | 5100 | 0% | DB hit on every request — no cache |
 | 2026-05-20 | after-redis | 300 | 73.7 | 41 | 300 | 3700 | 0% | Redis cache hit; p50 dropped 96% (1100ms → 41ms), p95 dropped 91% (3200ms → 300ms) |
+| 2026-05-21 | after-txn-cache | 300 | 78.4 | 33 | 290 | 4400 | 0% | User cache holding; p50 stable at 33ms |
 
 ---
 
@@ -147,6 +150,36 @@ Note: login/refresh latency unchanged — bcrypt and session DB writes are not c
 ```
 
 > Resume bullet: Implemented Redis hash caching for authenticated user lookups in FastAPI using a connection pool (lifespan) + per-request dependency injection pattern, reducing GET /me p50 from 1100ms to 41ms (-96%) and p95 from 3200ms to 300ms (-91%) at 300 concurrent users.
+
+### Phase 3 — Transaction-level Redis cache (after-txn-cache)
+
+Redis caches `GET /transactions/user` results per user. Key: `transactions_{user_id}`, TTL 30s, stored as JSON-serialized hash. Cache populated on DB miss; subsequent reads skip SQLAlchemy entirely.
+
+```
+GET /transactions/user RPS:
+  after-redis (no txn cache):  347.4 req/s
+  after-txn-cache:             414.1 req/s  (+19%)
+
+GET /transactions/user p50:
+  after-redis:      100ms
+  after-txn-cache:   50ms  (-50%)
+
+GET /transactions/user p95:
+  after-redis:      320ms
+  after-txn-cache:  140ms  (-56%)
+
+POST /transactions p95:
+  after-redis:      370ms
+  after-txn-cache:  260ms  (-30%)
+
+GET /me p50 (auth-service, user cache still holding):
+  after-redis:      41ms
+  after-txn-cache:  33ms  (stable)
+
+Failure rate: 0% (all endpoints)
+```
+
+> Resume bullet: Extended Redis caching to transaction reads (`GET /transactions/user`) using cache-aside pattern with JSON serialization via Pydantic `.model_dump(mode="json")`, reducing p95 from 320ms to 140ms (-56%) and increasing throughput from 347 to 414 req/s (+19%) at 300 concurrent users.
 
 ---
 
