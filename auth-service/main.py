@@ -3,7 +3,6 @@ from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import update
-#from init_db import init_db
 from core.config import load_config
 from core.security import create_access_token, generate_refresh_token, hash_refresh_token
 from crud.user import authenticate_user, revoke_refresh_session, verify_session_refresh
@@ -57,7 +56,7 @@ def health_endpoint():
      enviroment = "Dev" if is_dev else "Prod"
      return HealthResponse(status="ok", service="Auth", version=app.version, enviroment=enviroment)
 
-@app.post("/users", response_model=UserRead)  # Register a new user account with hashed credentials.
+@app.post("/users", response_model=UserRead, status_code=status.HTTP_201_CREATED)  # Register a new user account with hashed credentials.
 async def create_user(user_in: UserCreate, db:AsyncSession = Depends(get_db)):
     try:
         hashed_password = await hash_password(user_in.password)
@@ -72,7 +71,10 @@ async def create_user(user_in: UserCreate, db:AsyncSession = Depends(get_db)):
         await db.commit()
         await db.refresh(db_user)
 
-        return UserRead(id=db_user.id, email=db_user.email, is_active=db_user.is_active, created_at=db_user.created_at)
+        return UserRead(id=db_user.id,
+                         email=db_user.email,
+                           is_active=db_user.is_active,
+                             created_at=db_user.created_at)
     except Exception as e:
         await db.rollback()
         raise HTTPException(status_code=500, detail=str(e))

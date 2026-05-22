@@ -9,4 +9,4 @@ class User(Base):
     email = Column(String(255), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
-    created_at = Column(DateTime, default=lambda: datetime.utcnow(), nullable= False)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC), nullable= False)

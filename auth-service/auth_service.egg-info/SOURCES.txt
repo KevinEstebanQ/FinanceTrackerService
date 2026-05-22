@@ -23,3 +23,6 @@ schemas/auth.py
 schemas/debug.py
 schemas/health.py
 schemas/user.py
+tests/test_config.py
+tests/test_integration_fastapi.py
+tests/test_security.py
