@@ -15,6 +15,7 @@ services:
       redis:
         condition: service_healthy
     restart: unless-stopped
+    profiles: ["dev"]
 
   transactions-service:
     build:
@@ -32,6 +33,7 @@ services:
       redis:
         condition: service_healthy
     restart: unless-stopped
+    profiles: ["dev"] 
 
   db:
     image: postgres:16
@@ -51,6 +53,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+    profiles: ["dev"]
 
   redis:
     container_name: ${REDIS_CONTAINER_NAME}
@@ -63,6 +66,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+    profiles: ["dev"]
 
 
   grafana:
@@ -78,5 +82,18 @@ services:
         db:
           condition: service_healthy
       restart: unless-stopped
+      profiles: ["dev"]
+  
+  test-db:
+    image: postgres:16
+    container_name: test-db
+    environment:
+      POSTGRES_DB: test-db
+      POSTGRES_USER: test-user
+      POSTGRES_PASSWORD: test-password
+    ports:
+      - "5433:5432"
+    profiles: ["test"]
+
 volumes:
   pg_data:
