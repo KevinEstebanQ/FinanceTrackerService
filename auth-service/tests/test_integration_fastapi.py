@@ -1,5 +1,6 @@
 import pytest_asyncio
 import pytest
+from core.security import decode_access_token
 
 class TestAuthServiceIntegration:
     """Integration tests for the Auth Service using FastAPI and an async test client."""
@@ -27,3 +28,21 @@ class TestAuthServiceIntegration:
         login_response = await test_client.post("/auth/login", data= {"username": "testuser@example.com",
                                                                        "password": "testpassword"})
         assert login_response.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_me_endpoint(self, test_client):
+        # Register and login to get a token
+        registration_data = {
+            "email": "testuser@example.com",
+            "password": "testpassword",
+            "is_active": True}
+        await test_client.post("/users", json=registration_data)
+        login_response = await test_client.post("/auth/login", data= {"username": "testuser@example.com",
+                                                                       "password": "testpassword"})
+        access_token = login_response.json()["access_token"]
+        user_info = await test_client.get("/me", headers={"Authorization": f"Bearer {access_token}"})
+        assert user_info.status_code == 200
+
+        assert decode_access_token(access_token).sub == user_info.json()["email"]
+
+        assert access_token is not None
