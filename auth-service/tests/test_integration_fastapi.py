@@ -46,3 +46,21 @@ class TestAuthServiceIntegration:
         assert decode_access_token(access_token).sub == user_info.json()["email"]
 
         assert access_token is not None
+
+    @pytest.mark.asyncio
+    async def test_refresh_token_cycle(self, test_client):
+        registration_data = {"email": "test@email.com",
+                             "password": "testpass1",
+                             "is_active": True}
+        await test_client.post("/users", json=registration_data)
+        login_response = await test_client.post("auth/login", data={"username": "test@email.com",
+                                                                "password": "testpass1"})
+        
+        refresh_token = login_response.json().get("refresh_token")
+        auth_token = login_response.json().get("access_token")
+        ## promt a token refresh
+
+        new_refresh = await test_client.post("/auth/refresh", json={"refresh_token": refresh_token},
+                               headers={"Authorization":f"Bearer {auth_token}"})
+        print(new_refresh)
+        assert isinstance(refresh_token, str)

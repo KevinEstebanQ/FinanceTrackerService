@@ -55,9 +55,11 @@ async def update_auth_session(user:User, db:AsyncSession, request:Request)->Toke
          ip = request.client.host if request.client else None
     )
     db.add(auth_session)
+    email = user.email
+    _id = user.id
     await db.commit()
 
-    new_access = create_access_token(subject=user.email, user_id=user.id)
+    new_access = create_access_token(subject=email, user_id=_id)
     return Token(access_token=new_access, token_type="bearer", refresh_token=refresh_token)
 
 async def authenticate_user(db:AsyncSession, email:str, password: str)->User | None:

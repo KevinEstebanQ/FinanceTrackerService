@@ -144,11 +144,3 @@ async def logout_request(body:LogoutRequest, current_user: User = Depends(get_cu
                               headers={"WWW-Authenticate": "bearer"}
                               )
     return {"ok":result}
-
-@app.get("/users/email/{email}", response_model=UserRead)  # Get user by email (for inter-service communication).
-async def get_user_by_email_endpoint(email: str, db: AsyncSession = Depends(get_db)):
-    from crud.user import get_user_by_email
-    user = await get_user_by_email(db, email)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
