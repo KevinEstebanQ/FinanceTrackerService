@@ -37,9 +37,11 @@ async def test_redis_pool():
 @pytest_asyncio.fixture(scope="function")
 async def test_session(test_engine) -> AsyncGenerator[AsyncSession, None]:
     """Provides a new database session for each test, rolling back any changes after the test."""
-    async with AsyncSession(test_engine) as session:
-        yield session
-        await session.rollback()
+    async with test_engine.connect() as conn:
+        await conn.begin()
+        async with AsyncSession(bind=conn, expire_on_commit=False) as session:
+            yield session
+        await conn.rollback()
 
 @pytest_asyncio.fixture
 async def test_client(test_engine, test_session, test_redis_pool) -> AsyncGenerator[AsyncClient, None]:

@@ -94,3 +94,10 @@ async def revoke_refresh_session(db: AsyncSession, refresh_token: str, user_id: 
     result = await db.execute(statement=stmt)
     await db.commit()
     return True if result.rowcount > 0 else False
+
+async def check_user_unique(db: AsyncSession, email: str):
+    stmt = select(User).where(User.email == email)
+    response = await db.execute(stmt)
+    await db.commit()
+    return False if response.scalar() != None else True
+

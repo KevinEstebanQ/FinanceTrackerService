@@ -64,5 +64,16 @@ class TestAuthServiceIntegration:
                                headers={"Authorization":f"Bearer {auth_token}"})
 
         assert new_refresh != refresh_token
+    
+    @pytest.mark.asyncio
+    async def test_duplicate_user_status_code(self, test_client):
+        #create new user
+        registration_data = {"email": "test@email.com",
+                             "password": "testpass1",
+                             "is_active": True}
+        await test_client.post("/users", json=registration_data)
 
+        ## test for correct duplicate handling
+        response = await test_client.post("/users", json=registration_data)
+        assert response.status_code == 400
     

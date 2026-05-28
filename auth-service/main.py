@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import update
 from core.config import load_config
 from core.security import create_access_token, generate_refresh_token, hash_refresh_token
-from crud.user import authenticate_user, revoke_refresh_session, verify_session_refresh
+from crud.user import authenticate_user, revoke_refresh_session, verify_session_refresh, check_user_unique
 from models.auth_session import AuthSession
 from core.security import hash_password
 from models.user import User
@@ -58,6 +58,9 @@ def health_endpoint():
 
 @app.post("/users", response_model=UserRead, status_code=status.HTTP_201_CREATED)  # Register a new user account with hashed credentials.
 async def create_user(user_in: UserCreate, db:AsyncSession = Depends(get_db)):
+    is_unique = await check_user_unique(db, user_in.email)
+    if not is_unique:
+            raise HTTPException(status_code=400, detail={"message": "user exists"})
     try:
         hashed_password = await hash_password(user_in.password)
 
@@ -66,7 +69,6 @@ async def create_user(user_in: UserCreate, db:AsyncSession = Depends(get_db)):
             hashed_password = hashed_password,
             is_active=user_in.is_active,
             )
-        
         db.add(db_user)
         await db.commit()
         await db.refresh(db_user)
