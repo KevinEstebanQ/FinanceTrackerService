@@ -62,5 +62,7 @@ class TestAuthServiceIntegration:
 
         new_refresh = await test_client.post("/auth/refresh", json={"refresh_token": refresh_token},
                                headers={"Authorization":f"Bearer {auth_token}"})
-        print(new_refresh)
-        assert isinstance(refresh_token, str)
+
+        assert new_refresh != refresh_token
+
+    
