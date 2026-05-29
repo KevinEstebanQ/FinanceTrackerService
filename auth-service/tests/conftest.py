@@ -25,12 +25,15 @@ async def test_engine():
     finally:
         await engine.dispose()
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="function")
 async def test_redis_pool():
     """Provides a Redis client for testing, flushing the database before and after tests."""
     pool = aioredis.ConnectionPool.from_url(REDIS_TEST,
                                             max_connections=50,
                                             decode_responses=True)
+    redis = aioredis.Redis(connection_pool=pool)
+    await redis.flushdb()
+    await redis.aclose()
     yield pool
     
 

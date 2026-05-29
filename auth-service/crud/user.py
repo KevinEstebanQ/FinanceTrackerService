@@ -98,6 +98,18 @@ async def revoke_refresh_session(db: AsyncSession, refresh_token: str, user_id: 
 async def check_user_unique(db: AsyncSession, email: str):
     stmt = select(User).where(User.email == email)
     response = await db.execute(stmt)
-    await db.commit()
     return False if response.scalar() != None else True
+
+async def check_refresh_revoked(db: AsyncSession, refresh_token_old: str):
+    hash = hash_refresh_token(refresh_token_old)
+    stmt = select(AuthSession).where(AuthSession.token_hash == hash)
+    result = await db.execute(statement=stmt)
+    session = result.scalar_one_or_none()
+    if not session:
+        return False
+    else:
+        if session.revoked_at is not None:
+            return True
+    return False
+
 
