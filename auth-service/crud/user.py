@@ -76,6 +76,8 @@ async def verify_session_refresh(db:AsyncSession, refresh_token: str, request:Re
     auth_session = await query_auth_session(db=db, hashed_refresh_token=hashed)
     if not auth_session:
         return None
+    if auth_session.revoked_at is not None:
+        return None
     user = await query_user_from_user_id(db=db, user_id=auth_session.user_id)
     if not user:
         return None

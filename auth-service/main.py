@@ -129,8 +129,11 @@ async def enforce_auth(current_user: User = Depends(get_current_user)):
      return {"ok":True}
 
 @app.post("/auth/refresh", response_model=Token)  # Exchange a valid refresh token for a new token set.
-async def refresh_auth_session(request: Request, body: AuthRefreshRead, db:AsyncSession = Depends(get_db))->Token:
+async def refresh_auth_session(request: Request, body: AuthRefreshRead, db:AsyncSession = Depends(get_db), user: User = Depends(get_current_user))->Token:
      token = await verify_session_refresh(db=db, refresh_token=body.refresh_token, request=request)
+     if token is None:
+          raise HTTPException(status_code=401, detail="unauthorized, incorrect token",
+                              headers={"WWW-Authenticate": "bearer"})
      return token
      
 @app.post("/auth/logout")  # Revoke an active refresh session for the authenticated user.

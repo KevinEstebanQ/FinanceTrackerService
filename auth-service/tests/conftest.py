@@ -60,6 +60,20 @@ async def test_client(test_engine, test_session, test_redis_pool) -> AsyncGenera
     app.dependency_overrides.clear()
     app.state.pool = None
 
+@pytest_asyncio.fixture
+async def registered_user(test_client):
+    data = {"email": "test@email.com",
+            "password": "testpass1",
+            "is_active": True
+            }
+    register_response = await test_client.post("/users", json=data)
+    return data
+
+@pytest_asyncio.fixture
+async def logged_in_user(test_client, registered_user)->dict[str, any]:
+    login_response = await test_client.post("/auth/login", data={"username":registered_user["email"],
+                                                                 "password":registered_user["password"]})
+    return login_response.json()
 
 
 
